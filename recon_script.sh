@@ -1,0 +1,169 @@
+#!/bin/bash
+
+LOGO=$(cat << "EOF"
+      =====(((=))=====(=)))===========
+      " `,      |' /
+      /"/        |"" 
+     """|        \"| 
+     |"||        " "
+     "" "        |"|\ 
+    /""~\\.      /" ""~, 
+   ""~""""\`"",~\`~"!!"!" \\ 
+   /"""""/""! "~""" "" "~", 
+  //\\""!!""~"!"!"\\"""/~!~, C~"~P
+ // !!"""""! "~ " !!"!! "," O o"~ 
+ ||   !!"!!~!!~||"  !     "" Y "" 
+ \\     !  !  !            \`"U"' 
+  \\ 
+   \\  0))
+    \`-~/~
+     \`~' 
+     			-- -- -- Prasad
+EOF
+)
+
+# Function to display help message
+show_help() {
+    echo "$LOGO"
+    echo "Usage: $0 [OPTIONS]"
+    echo
+    echo "Options:"
+    echo "  -d <domain>    Specify a single target domain (e.g. example.com)"
+    echo "  -f <file>      Specify a file containing a list of domains"
+    echo "  -o <dir>       Specify the output directory to save results (default: ./results)"
+    echo "  -h/--help      Show this help message"
+    echo
+    echo "Example:"
+    echo "  $0 -d example.com -o ./results"
+    echo "  $0 -f domains.txt -o ./results"
+}
+
+# If no arguments provided, show logo and exit
+if [ $# -eq 0 ]; then
+    echo "$LOGO"
+    echo "Use -h or --help for usage instructions."
+    exit 0
+fi
+
+# Parse command-line options
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -d)
+            DOMAIN="$2"
+            shift 2
+            ;;
+        -f)
+            DOMAIN_FILE="$2"
+            shift 2
+            ;;
+        -o)
+            OUTPUT_DIR="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+done
+
+# Set default output directory if not provided
+if [ -z "$OUTPUT_DIR" ]; then
+    OUTPUT_DIR="$PWD/results"
+    echo "No output directory specified. Using default: $OUTPUT_DIR"
+fi
+
+# Create the output directory if it doesn't exist
+mkdir -p "$OUTPUT_DIR"
+
+# Function to check if a tool is installed and get its path
+check_tool() {
+    tool_name="$1"
+    tool_path=$(which "$tool_name")
+    if [ -z "$tool_path" ]; then
+        echo "Error: $tool_name is not installed or not in the system PATH."
+        exit 1
+    else
+        echo "$tool_name found at: $tool_path"
+    fi
+}
+
+# Check if required tools are available
+check_tool "assetfinder"
+check_tool "subfinder"
+check_tool "httpx"
+
+# Function to process a single domain
+process_single_domain() {
+    domain=$1
+    dir_name=$2
+
+    # Create the domain directory
+    domain_dir="$dir_name/$domain"
+    mkdir -p "$domain_dir"
+
+    # Define file paths
+    assetfinder_file="$domain_dir/$domain.assetfinder"
+    subfinder_file="$domain_dir/$domain.subfinder"
+    resolved_file="$domain_dir/$domain.resolved"
+    httpx_file="$domain_dir/$domain.httpx"
+    log_file="$domain_dir/enumeration_log.txt"
+
+    # Run assetfinder and subfinder
+    echo "Running assetfinder for $domain..."
+    echo "$domain" | $(which assetfinder) -subs-only > "$assetfinder_file"
+
+    echo "Running subfinder for $domain..."
+    $(which subfinder) -d "$domain" -all --recursive -o "$subfinder_file"
+
+    # Merge results
+    echo "Filtering duplicate subdomains..."
+    cat "$assetfinder_file" "$subfinder_file" | sort -u > "$resolved_file"
+
+    # Run httpx
+    echo "Running httpx on resolved subdomains..."
+    cat "$resolved_file" | $(which httpx) -title -web-server -status-code -follow-redirects -o "$httpx_file"
+
+    # Generate report
+    echo ">> Finished enumeration for $domain"
+    echo "Subdomains found by Assetfinder: $(wc -l < "$assetfinder_file")"
+    echo "Subdomains found by Subfinder: $(wc -l < "$subfinder_file")"
+    echo "Total resolved subdomains: $(wc -l < "$resolved_file")"
+    echo "Live subdomains found by Httpx: $(wc -l < "$httpx_file")"
+
+    # Save log
+    echo ">> Enumeration completed for $domain" > "$log_file"
+    echo "Subdomains found by Assetfinder: $(wc -l < "$assetfinder_file")" >> "$log_file"
+    echo "Subdomains found by Subfinder: $(wc -l < "$subfinder_file")" >> "$log_file"
+    echo "Total resolved subdomains: $(wc -l < "$resolved_file")" >> "$log_file"
+    echo "Live subdomains found by Httpx: $(wc -l < "$httpx_file")" >> "$log_file"
+}
+
+#ME
+if [ -n "$DOMAIN" ]; then
+    # Process a single domain
+    process_single_domain "$DOMAIN" "$OUTPUT_DIR"
+elif [ -n "$DOMAIN_FILE" ]; then
+    # Process multiple domains from a file
+    if [ ! -f "$DOMAIN_FILE" ]; then
+        echo "Error: File '$DOMAIN_FILE' does not exist."
+        exit 1
+    fi
+
+    while IFS= read -r domain; do
+        if [ -n "$domain" ]; then
+            echo "Processing domain: $domain"
+            process_single_domain "$domain" "$OUTPUT_DIR"
+        fi
+    done < "$DOMAIN_FILE"
+else
+    echo "Error: No domain or file specified."
+    show_help
+    exit 1
+fi
+
