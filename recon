@@ -89,7 +89,7 @@ check_tool() {
         echo "Error: $tool_name is not installed or not in the system PATH."
         exit 1
     else
-        echo "$tool_name found at: $tool_path"
+        echo "$tool_name found at: $tool_path" &>/dev/Null
     fi
 }
 
