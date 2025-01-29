@@ -90,6 +90,4 @@ The script creates a directory for each domain within the specified output direc
 ## License
 
 This project is licensed under the MIT License.
-```
 
-This `README.md` provides a comprehensive guide on how to use your script, its options, and examples. You can add this file to your repository.
