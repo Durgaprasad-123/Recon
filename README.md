@@ -1,6 +1,22 @@
 # Recon
 This script is used for domain enumeration and subdomain discovery. It uses tools like `assetfinder`, `subfinder`, and `httpx` to find and verify subdomains of a given domain or list of domains.
 
+# Recon Tool Installation Script
+
+This script checks for the installation of essential tools (`Go`, `subfinder`, `assetfinder`, and `httpx`) required for domain enumeration and subdomain discovery. If any of the tools are not installed, the script will attempt to install them using `go install`.
+
+## Prerequisites
+
+- Ensure `Go` is installed on your system. You can download and install it from [https://golang.org/dl/](https://golang.org/dl/).
+
+## Usage
+
+To install all the Prerequisites "apart from go", simply run it in your terminal:
+
+```bash
+./install_tools.sh
+```
+
 ## Prerequisites
 
 Ensure the following tools are installed and available in your system `PATH`:
@@ -8,7 +24,6 @@ Ensure the following tools are installed and available in your system `PATH`:
 - `assetfinder`
 - `subfinder`
 - `httpx`
-- `curl`
 
 ## Usage
 
