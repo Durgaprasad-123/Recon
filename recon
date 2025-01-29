@@ -22,7 +22,7 @@ LOGO=$(cat << "EOF"
 EOF
 )
 
-# Function to display help message
+
 show_help() {
     echo "$LOGO"
     echo "Usage: $0 [OPTIONS]"
@@ -38,14 +38,14 @@ show_help() {
     echo "  $0 -f domains.txt -o ./results"
 }
 
-# If no arguments provided, show logo and exit
+
 if [ $# -eq 0 ]; then
     echo "$LOGO"
     echo "Use -h or --help for usage instructions."
     exit 0
 fi
 
-# Parse command-line options
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -d)
