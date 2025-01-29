@@ -98,6 +98,8 @@ check_tool "assetfinder"
 check_tool "subfinder"
 check_tool "httpx"
 
+echo "$LOGO"
+
 # Function to process a single domain
 process_single_domain() {
     domain=$1
