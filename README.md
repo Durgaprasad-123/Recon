@@ -69,7 +69,7 @@ bash recon.sh
 2. Enumerate subdomains for a list of domains from a file and save results in a specified directory:
 
     ```bash
-    ./recon.sh -f domains.txt -o ./custom_results
+    ./recon.sh -f domains.txt -o output
     ```
 
 ## Output
