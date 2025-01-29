@@ -28,7 +28,9 @@ Ensure the following tools are installed and available in your system `PATH`:
 ## Usage
 
 ```bash
-./recon_script.sh [OPTIONS]
+./recon.sh [OPTIONS]
+or
+bash recon.sh
 
       " `,      |' /
       /"/        |"" 
@@ -61,13 +63,13 @@ Ensure the following tools are installed and available in your system `PATH`:
 1. Enumerate subdomains for a single domain and save results in the default directory:
 
     ```bash
-    ./recon_script.sh -d example.com
+    ./recon.sh -d example.com
     ```
 
 2. Enumerate subdomains for a list of domains from a file and save results in a specified directory:
 
     ```bash
-    ./recon_script.sh -f domains.txt -o ./custom_results
+    ./recon.sh -f domains.txt -o ./custom_results
     ```
 
 ## Output
