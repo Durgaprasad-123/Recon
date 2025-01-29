@@ -11,7 +11,7 @@ then
     exit 1
 else
     echo "Go is installed"
-    echo "~~~~~~~~~~~~~~~~~~~~~~"
+    echo "_______________________________________________________________________________"
 fi
 
 if ! check_tool_installed "subfinder"; then
