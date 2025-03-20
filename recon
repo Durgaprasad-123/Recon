@@ -1,27 +1,26 @@
 #!/bin/bash
 
 LOGO=$(cat << "EOF"
-      =====(((=))=====(=)))===========
-      " `,      |' /
-      /"/        |"" 
-     """|        \"| 
-     |"||        " "
-     "" "        |"|\ 
-    /""~\\.      /" ""~, 
-   ""~""""\`"",~\`~"!!"!" \\ 
-   /"""""/""! "~""" "" "~", 
-  //\\""!!""~"!"!"\\"""/~!~, C~"~P
- // !!"""""! "~ " !!"!! "," O o"~ 
- ||   !!"!!~!!~||"  !     "" Y "" 
- \\     !  !  !            \`"U"' 
-  \\ 
-   \\  0))
-    \`-~/~
-     \`~' 
-     			-- -- -- Prasad
+      =====(((=))=====(=)))===========  
+      " `,      |' /  
+      /"/        |""  
+     """|        \"|  
+     |"||        " "  
+     "" "        |"|\  
+    /""~\\.      /" ""~,  
+   ""~""""\`"",~\`~"!!"!" \\  
+   /"""""/""! "~""" "" "~",  
+  //\\""!!""~"!"!"\\"""/~!~, C~"~P  
+ // !!"""""! "~ " !!"!! "," O o"~  
+ ||   !!"!!~!!~||"  !     "" Y ""  
+ \\     !  !  !            \`"U"'  
+  \\  
+   \\  0))  
+    \`-~/~  
+     \`~'  
+     			-- -- -- Prasad  
 EOF
 )
-
 
 show_help() {
     echo "$LOGO"
@@ -38,13 +37,11 @@ show_help() {
     echo "  $0 -f domains.txt -o ./results"
 }
 
-
 if [ $# -eq 0 ]; then
     echo "$LOGO"
     echo "Use -h or --help for usage instructions."
     exit 0
 fi
-
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -144,9 +141,38 @@ process_single_domain() {
     echo "Subdomains found by Subfinder: $(wc -l < "$subfinder_file")" >> "$log_file"
     echo "Total resolved subdomains: $(wc -l < "$resolved_file")" >> "$log_file"
     echo "Live subdomains found by Httpx: $(wc -l < "$httpx_file")" >> "$log_file"
+
+    # Organizing subdomains by levels
+    organize_subdomains "$resolved_file" "$domain_dir"
 }
 
-#ME
+# Function to organize subdomains by their levels
+organize_subdomains() {
+    resolved_file=$1
+    domain_dir=$2
+
+    # 1st level subdomains
+    echo "Extracting 1st level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{print $(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs1_domain.txt"
+
+    # 2nd level subdomains
+    echo "Extracting 2nd level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>3) print $(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs2_domain.txt"
+
+    # 3rd level subdomains
+    echo "Extracting 3rd level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>4) print $(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs3_domain.txt"
+
+    # 4th level subdomains
+    echo "Extracting 4th level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>5) print $(NF-5)"."$(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs4_domain.txt"
+
+    # 5th level subdomains
+    echo "Extracting 5th level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>6) print $(NF-6)"."$(NF-5)"."$(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs5_domain.txt"
+}
+
+# Main process
 if [ -n "$DOMAIN" ]; then
     # Process a single domain
     process_single_domain "$DOMAIN" "$OUTPUT_DIR"

@@ -1,0 +1,5 @@
+>> Enumeration completed for bexio.com
+Subdomains found by Assetfinder: 929
+Subdomains found by Subfinder: 2473
+Total resolved subdomains: 3123
+Live subdomains found by Httpx: 190
