@@ -1,24 +1,24 @@
 #!/bin/bash
 
 LOGO=$(cat << "EOF"
-      =====(((=))=====(=)))===========  
-      " `,      |' /  
-      /"/        |""  
-     """|        \"|  
-     |"||        " "  
-     "" "        |"|\  
-    /""~\\.      /" ""~,  
-   ""~""""\`"",~\`~"!!"!" \\  
-   /"""""/""! "~""" "" "~",  
-  //\\""!!""~"!"!"\\"""/~!~, C~"~P  
- // !!"""""! "~ " !!"!! "," O o"~  
- ||   !!"!!~!!~||"  !     "" Y ""  
- \\     !  !  !            \`"U"'  
-  \\  
-   \\  0))  
-    \`-~/~  
-     \`~'  
-     			-- -- -- Prasad  
+      =====(((=))=====(=)))===========
+      " ,      |' /
+      /"/        |"" 
+     """|        \"| 
+     |"||        " "
+     "" "        |"|\ 
+    /""~\\.      /" ""~, 
+   ""~""""\"",~\~"!!"!" \\ 
+   /"""""/""! "~""" "" "~", 
+  //\\""!!""~"!"!"\\"""/~!~, C~"~P
+ // !!"""""! "~ " !!"!! "," O o"~ 
+ ||   !!"!!~!!~||"  !     "" Y "" 
+ \\     !  !  !            \"U"' 
+  \\ 
+   \\  0))
+    \-~/~
+     \~' 
+                 -- -- -- Prasad
 EOF
 )
 
@@ -86,7 +86,7 @@ check_tool() {
         echo "Error: $tool_name is not installed or not in the system PATH."
         exit 1
     else
-        echo "$tool_name found at: $tool_path" &>/dev/Null
+        echo "$tool_name found at: $tool_path" &>/dev/null
     fi
 }
 
@@ -109,20 +109,45 @@ process_single_domain() {
     # Define file paths
     assetfinder_file="$domain_dir/$domain.assetfinder"
     subfinder_file="$domain_dir/$domain.subfinder"
+    recursive_subfinder_file="$domain_dir/$domain.recursive_subfinder"
     resolved_file="$domain_dir/$domain.resolved"
     httpx_file="$domain_dir/$domain.httpx"
     log_file="$domain_dir/enumeration_log.txt"
+    subs1_file="$domain_dir/$domain.subs1.txt"
+    subs2_file="$domain_dir/$domain.subs2.txt"
+    subs3_file="$domain_dir/$domain.subs3.txt"
+    subs4_file="$domain_dir/$domain.subs4.txt"
+    subs5_file="$domain_dir/$domain.subs5.txt"
 
     # Run assetfinder and subfinder
     echo "Running assetfinder for $domain..."
     echo "$domain" | $(which assetfinder) -subs-only > "$assetfinder_file"
 
     echo "Running subfinder for $domain..."
-    $(which subfinder) -d "$domain" -all --recursive -o "$subfinder_file"
+    $(which subfinder) -d "$domain" -o "$subfinder_file"
+
+    echo "Running recursive subfinder for $domain..."
+    $(which subfinder) -d "$domain" -all -recursive -o "$recursive_subfinder_file"
 
     # Merge results
     echo "Filtering duplicate subdomains..."
-    cat "$assetfinder_file" "$subfinder_file" | sort -u > "$resolved_file"
+    cat "$assetfinder_file" "$subfinder_file" "$recursive_subfinder_file" | sort -u > "$resolved_file"
+
+    # Extract subdomains by level
+    echo "Extracting 1st level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{print $(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$subs1_file"
+
+    echo "Extracting 2nd level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>3) print $(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$subs2_file"
+
+    echo "Extracting 3rd level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>4) print $(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$subs3_file"
+
+    echo "Extracting 4th level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>5) print $(NF-5)"."$(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$subs4_file"
+
+    echo "Extracting 5th level subdomains..."
+    cat "$resolved_file" | awk -F'.' '{if (NF>6) print $(NF-6)"."$(NF-5)"."$(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$subs5_file"
 
     # Run httpx
     echo "Running httpx on resolved subdomains..."
@@ -132,47 +157,32 @@ process_single_domain() {
     echo ">> Finished enumeration for $domain"
     echo "Subdomains found by Assetfinder: $(wc -l < "$assetfinder_file")"
     echo "Subdomains found by Subfinder: $(wc -l < "$subfinder_file")"
+    echo "Subdomains found by Recursive Subfinder: $(wc -l < "$recursive_subfinder_file")"
     echo "Total resolved subdomains: $(wc -l < "$resolved_file")"
+    echo "1st level subdomains: $(wc -l < "$subs1_file")"
+    echo "2nd level subdomains: $(wc -l < "$subs2_file")"
+    echo "3rd level subdomains: $(wc -l < "$subs3_file")"
+    echo "4th level subdomains: $(wc -l < "$subs4_file")"
+    echo "5th level subdomains: $(wc -l < "$subs5_file")"
     echo "Live subdomains found by Httpx: $(wc -l < "$httpx_file")"
 
     # Save log
-    echo ">> Enumeration completed for $domain" > "$log_file"
-    echo "Subdomains found by Assetfinder: $(wc -l < "$assetfinder_file")" >> "$log_file"
-    echo "Subdomains found by Subfinder: $(wc -l < "$subfinder_file")" >> "$log_file"
-    echo "Total resolved subdomains: $(wc -l < "$resolved_file")" >> "$log_file"
-    echo "Live subdomains found by Httpx: $(wc -l < "$httpx_file")" >> "$log_file"
-
-    # Organizing subdomains by levels
-    organize_subdomains "$resolved_file" "$domain_dir"
+    {
+        echo ">> Enumeration completed for $domain"
+        echo "Subdomains found by Assetfinder: $(wc -l < "$assetfinder_file")"
+        echo "Subdomains found by Subfinder: $(wc -l < "$subfinder_file")"
+        echo "Subdomains found by Recursive Subfinder: $(wc -l < "$recursive_subfinder_file")"
+        echo "Total resolved subdomains: $(wc -l < "$resolved_file")"
+        echo "1st level subdomains: $(wc -l < "$subs1_file")"
+        echo "2nd level subdomains: $(wc -l < "$subs2_file")"
+        echo "3rd level subdomains: $(wc -l < "$subs3_file")"
+        echo "4th level subdomains: $(wc -l < "$subs4_file")"
+        echo "5th level subdomains: $(wc -l < "$subs5_file")"
+        echo "Live subdomains found by Httpx: $(wc -l < "$httpx_file")"
+    } > "$log_file"
 }
 
-# Function to organize subdomains by their levels
-organize_subdomains() {
-    resolved_file=$1
-    domain_dir=$2
-
-    # 1st level subdomains
-    echo "Extracting 1st level subdomains..."
-    cat "$resolved_file" | awk -F'.' '{print $(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs1_domain.txt"
-
-    # 2nd level subdomains
-    echo "Extracting 2nd level subdomains..."
-    cat "$resolved_file" | awk -F'.' '{if (NF>3) print $(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs2_domain.txt"
-
-    # 3rd level subdomains
-    echo "Extracting 3rd level subdomains..."
-    cat "$resolved_file" | awk -F'.' '{if (NF>4) print $(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs3_domain.txt"
-
-    # 4th level subdomains
-    echo "Extracting 4th level subdomains..."
-    cat "$resolved_file" | awk -F'.' '{if (NF>5) print $(NF-5)"."$(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs4_domain.txt"
-
-    # 5th level subdomains
-    echo "Extracting 5th level subdomains..."
-    cat "$resolved_file" | awk -F'.' '{if (NF>6) print $(NF-6)"."$(NF-5)"."$(NF-4)"."$(NF-3)"."$(NF-2)"."$(NF-1)"."$NF}' | sort -u > "$domain_dir/subs5_domain.txt"
-}
-
-# Main process
+# Process domains
 if [ -n "$DOMAIN" ]; then
     # Process a single domain
     process_single_domain "$DOMAIN" "$OUTPUT_DIR"
@@ -194,4 +204,3 @@ else
     show_help
     exit 1
 fi
-
